@@ -1054,6 +1054,9 @@ void PrintPrometheusMetrics(const Metrics& m, StringResponse* resp) {
 
   // Clients metrics
   const auto& conn_stats = m.facade_stats.conn_stats;
+  const int max_clients = absl::GetFlag(FLAGS_maxclients)
+  AppendMetricWithoutLabels("max_clients", "Maximal number of clients",
+                            max_clients, MetricType::GAUGE, &resp->body());
   AppendMetricWithoutLabels("connected_clients", "", conn_stats.num_conns, MetricType::GAUGE,
                             &resp->body());
   AppendMetricWithoutLabels("client_read_buffer_bytes", "", conn_stats.read_buf_capacity,
@@ -1062,6 +1065,7 @@ void PrintPrometheusMetrics(const Metrics& m, StringResponse* resp) {
                             MetricType::GAUGE, &resp->body());
   AppendMetricWithoutLabels("dispatch_queue_bytes", "", conn_stats.dispatch_queue_bytes,
                             MetricType::GAUGE, &resp->body());
+
 
   // Memory metrics
   auto sdata_res = io::ReadStatusInfo();
@@ -1935,7 +1939,9 @@ void ServerFamily::Info(CmdArgList args, ConnectionContext* cntx) {
   }
 
   if (should_enter("CLIENTS")) {
+    const int max_clients = absl::GetFlag(FLAGS_maxclients);
     append("connected_clients", m.facade_stats.conn_stats.num_conns);
+    append("max_clients", max_clients);
     append("client_read_buffer_bytes", m.facade_stats.conn_stats.read_buf_capacity);
     append("blocked_clients", m.facade_stats.conn_stats.num_blocked_clients);
     append("dispatch_queue_entries", m.facade_stats.conn_stats.dispatch_queue_entries);
